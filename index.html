@@ -1,0 +1,140 @@
+<?php include('includes/dbconn.php');
+session_start();
+if(isset($_SESSION['shcmusic']['username'])){
+	$logged_in = 1;
+	$user_sql = sprintf("SELECT * FROM users WHERE username = '%s'", $_SESSION['shcmusic']['username']);
+	$user_query = mysql_query($user_sql) or die(mysql_error());
+	$RsUser = mysql_fetch_assoc($user_query);
+}else{
+	$logged_in = 0;
+}
+$news_sql = "SELECT news_id, headline, image FROM news ORDER BY date_added DESC, news_id  LIMIT 0, 5";
+$news_query = mysql_query($news_sql) or die(mysql_error());
+
+$events_sql = "SELECT event_id, headline, image FROM events WHERE happened <> 1 ORDER BY date ASC LIMIT 0, 5";
+$events_query = mysql_query($events_sql) or die(mysql_error());
+
+$resources_sql = "SELECT resource_id, resource_name FROM resources ORDER BY date_added DESC LIMIT 0, 3";
+$resources_query = mysql_query($resources_sql) or die(mysql_error());
+
+$lessons_sql = "SELECT instrument FROM lessons ORDER BY instrument";
+$lessons_query = mysql_query($lessons_sql) or die(mysql_error());
+?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>SHC MUSIC</title>
+<link type="text/css" rel="stylesheet" href="style.css" > 
+<script type="text/javascript">
+function submit (form_id)
+{
+var form = document.getElementById(form_id);
+form.submit();
+}
+
+function clear_input (id){
+var input = document.getElementById(id);
+if (input.value == id) {
+input.value = "";
+}
+}
+</script>
+</head>
+<body>
+	<div id="main_box">
+		<div id="header">
+			<div id="banner">
+            	<?php if ($logged_in != 1){?>
+				<div id="sign_in">
+                	<div style="margin:10px;">
+						<form id="sign_in_form" method="post" action="sign_in.php">
+							<input size="16" type="text" name="username" value="Username" id="Username" onClick="clear_input('Username')"/>
+							<a href="javascript:submit('sign_in_form')">Sign In</a>
+							<br />
+							<input size="16" type="password" name="password" id="password" onClick="clear_input('password')" value="password" />
+							<a href="sign_up.php">Sign Up</a>
+						</form>
+                  </div>
+				</div>
+                <? }else{?>
+                <div id="logged_in_div">
+                	<img id="user_image" src="<?php echo $RsUser['image'];?>" width="50" height="50" style="display:inline;float:right;padding-left:5px;">
+                    <a href="userpage.php" style="color:#FF0000;">Profile Page</a> · <a href="sign_out.php"style="color:#FF0000;">Sign Out</a><br />
+                    <a href="lessons.php">Lessons</a> · <a href="events.php">Events</a><br />
+                    <a href="resources.php">Resources</a> · <a href="photos.php">Photos</a>
+                </div>
+                <?php }?>
+			</div>
+			<div id="navbar">
+            	<ul class="navbar">
+					<li><a class="navbar_links" href="index.php">Home</a></li>
+					<li><a class="navbar_links" href="news.php">News</a></li>
+					<li><a class="navbar_links" href="events.php">Events</a></li>
+					<li><a class="navbar_links" href="resources.php">Resources</a></li>
+					<li><a class="navbar_links" href="lessons.php">Lessons</a></li>
+					<li><a class="navbar_links" href="photos.php">Photos</a></li>						
+                </ul>
+                <form action="search.php" method="get" id="search_form">
+					<a class="right" id="search_link" href="javascript:submit('search_form')">Search</a>
+					<input class="right" id="search_input" size="16" type="text" name="query" value="" />
+				</form>
+			</div>
+	  	</div>
+		<div id="main_content">
+			<div id="container_box">
+				<div id="news_box"class="content_box left_box">
+					<b style="color:#FFFFFF;">News</b><hr/>
+                    <div class="content_image"><img src="<?php $news_image = mysql_result($news_query, 0, 'image'); echo $news_image; mysql_data_seek($news_query, 0);?>" width="180" height="133"></div>
+					<?php while($RsNews = mysql_fetch_assoc($news_query)){?>						
+					<a href="news.php?id=<?php echo $RsNews['news_id'];?>" class="box_links"><?php echo $RsNews['headline'];?></a><br />
+                    <?php }?>
+					<a href="news.php" class="red_box_links more">More...</a>
+                    
+				</div>
+				<div id="event_box"class="content_box right_box">
+					<b style="color:#FFFFFF;">Events</b><hr/>
+                    <div class="content_image"><img src="<?php $events_image = mysql_result($events_query, 0, 'image'); echo $events_image; mysql_data_seek($events_query, 0);?>" width="180" height="133"></div>
+					<?php while($RsEvents = mysql_fetch_assoc($events_query)){?>						
+					<a href="events.php?id=<?php echo $RsEvents['event_id'];?>" class="box_links"><?php echo $RsEvents['headline'];?></a><br />
+                    <?php }?>
+					<a href="events.php"class="red_box_links more">More...</a>
+                    	
+				</div>
+				<div id="resources_box" class="content_box left_box">
+					<b style="color:#FFFFFF;">Resources</b><hr/>
+                    <div class="content_image"><img src="NZQA.png" width="180" height="133"></div>
+					<?php while($RsResources = mysql_fetch_assoc($resources_query)){?>
+                    <a href="resources.php?id=<?php echo $RsResources['resource_id'];?>"class="box_links"><?php echo $RsResources['resource_name'];?></a><br />
+					<?php }?>
+					<a href="resources.php"class="red_box_links more">More...</a>
+                    
+				</div>
+				<div id="lessons_box"class="content_box right_box">
+					<b style="color:#FFFFFF;">Lessons</b><hr/>
+                    <div class="content_image"><img src="music_notes.jpeg" width="180"></div>
+					<?php 
+					$current_instrument = "";
+					while($RsLessons = mysql_fetch_assoc($lessons_query)){
+						if($current_instrument != $RsLessons['instrument']){
+						$current_instrument = $RsLessons['instrument'];?>
+                    <a href="lessons.php?instrument=<?php echo $RsLessons['instrument'];?>"class="box_links"><?php echo ucfirst($RsLessons['instrument']);?></a><br />
+                    <?php }}?>
+					<a href="lessons.php"class="red_box_links more">More...</a>
+                    
+				</div>
+			</div>
+		</div>
+		<div id="footer">
+			<table class="footer">
+				<tr>
+					<td style="color:#FFFFFF;">&copy;2010 Sacred Heart Music</td>
+					<td><a href="http://www.sacredheart.school.nz">Sacred Heart Main Website</a></td>
+					<td><a href="contact.php">Contact Information<a/></td>
+					<td><a href="about.php">About Us</a></td>
+				</tr>
+			</table>
+		</div>
+	</div>
+</body>
+</html>
